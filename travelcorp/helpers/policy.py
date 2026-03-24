@@ -1,4 +1,9 @@
-"""Corporate travel policy rules (decoupled from HTTP transport)."""
+"""
+Corporate travel policy rules — pure functions only.
+
+Kept separate from ``travelcorp.api`` so you can explain: HTTP client = transport;
+this module = business wording the assignment asks to derive from the API response.
+"""
 
 from __future__ import annotations
 

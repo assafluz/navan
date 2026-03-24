@@ -11,10 +11,18 @@ This document maps the assignment to the implementation, records the layered arc
 | Store the Flight Number and Price into variables | After navigation to the **confirmation-of-selection** screen (`purchase.php`), the test reads **Flight Number** and **Price** from the on-page summary into `flight_number` and `price_on_confirmation_screen` (`tests/test_ui_booking_flow.py`, `PurchasePage`). |
 | Fill out the passenger details and click **Purchase Flight** | `PurchasePage.fill_mock_passenger_details` + `purchase_flight` (`travelcorp/pages/purchase_page.py`). |
 | Verify that the Id is generated and the Amount matches the selected price | **Id**: asserted non-empty. **Amount**: when the sandbox renders a summary that **matches** the chosen row (and the POST body), we assert `final_amount == price_on_confirmation_screen` (assignment intent). When BlazeDemo serves its known **static** template (summary/receipt ignore POST), that strict equality cannot hold; the test keeps **POST verification** inside `select_lowest_price_flight` and falls back to “booking completed” checks (`final_amount > 0`). See **Sandbox note** below. |
-| Create a user with job title Manager using payload `{ "name": "Alice", "job": "Manager" }` | `create_user` + test asserts HTTP 201 (`tests/test_api_policy_engine.py`). |
-| Create a user with job title Intern using payload `{ "name": "Bob", "job": "Intern" }` | Same, with Intern payload and 201. |
-| Write a function that makes a decision based on the response: Manager → Business Class Allowed, Intern → Economy Only | `evaluate_policy` / `policy_line_for_job` / `announce_policy_from_response_body` (`travelcorp/helpers/policy.py`). |
-| Negative test: create user without a job title and assert how the system handles it | Payload without `job`; asserts status is an allowed code and documents body shape without assuming production error contracts (ReqRes is a mock). |
+| Create a user with job title Manager using payload `{ "name": "Alice", "job": "Manager" }` | `create_user` in `travelcorp/api/reqres_client.py`; `test_policy_engine_manager_intern_and_logic_check` asserts **201** (`tests/test_api_policy_engine.py`). |
+| Create a user with job title Intern using payload `{ "name": "Bob", "job": "Intern" }` | Same test: second POST, asserts **201** and `job` in JSON. |
+| Write a function that makes a decision based on the response: Manager → Business Class Allowed, Intern → Economy Only | `evaluate_policy` (pure rule) + `announce_policy_from_response_body` (reads `job` from JSON, **prints** the assignment lines) in `travelcorp/helpers/policy.py`; test captures stdout with `pytest`’s `capsys`. |
+| Negative test: create user without a job title and assert how the system handles it | `test_policy_engine_missing_job_negative`: payload `{"name": "Charlie"}` only; asserts status **201 or 400** — no invented contract, because ReqRes is a mock. |
+
+**ReqRes note:** If the API returns `missing_api_key`, set a free **`REQRES_API_KEY`** (header `x-api-key`) from [app.reqres.in/api-keys](https://app.reqres.in/api-keys); see `travelcorp/api/reqres_client.py` and README.
+
+## Part 2 — why this shape (for your walkthrough)
+
+1. **`travelcorp/api`** — Only knows *where* to POST and *how* to call the stand-in service. Easy to swap ReqRes for a real internal API later without touching tests’ policy wording.
+2. **`travelcorp/helpers/policy`** — Pure “if job then policy string” logic + print helper driven by **response JSON**, matching the assignment’s “decision based on the response.”
+3. **Tests** — One test covers Manager + Intern + logic/print together (mirrors the brief’s `test_policy` flow); one small test for the negative case. Keeps the story simple for a 30-minute scope.
 
 ## Short technical summary
 
@@ -119,6 +127,8 @@ def test_policy():
     assert res.status_code == 201
     assert evaluate_policy("Intern") == "Economy Only"
 ```
+
+The repo implements this as `test_policy_engine_manager_intern_and_logic_check`, using `create_user()` plus `announce_policy_from_response_body(res.json())` so the rule is applied to the **actual** response body and the required lines are **printed**.
 
 ### Negative case
 

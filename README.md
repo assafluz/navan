@@ -20,7 +20,15 @@ Concise take-home solution: **Playwright (Python)** for the BlazeDemo booking fl
 ## Prerequisites
 
 - Python 3.9+
-- Network access to `https://blazedemo.com` (UI) and `https://reqres.in` (API; some corporate networks return HTTP 403)
+- Network access to `https://blazedemo.com` (UI)
+- **ReqRes API**: [ReqRes](https://reqres.in/) may require an **`x-api-key`** for `/api/users` (JSON error `missing_api_key` in the browser means you need a key). Create a free key at [app.reqres.in/api-keys](https://app.reqres.in/api-keys), then:
+
+```bash
+export REQRES_API_KEY="your_key_here"
+pytest tests/test_api_policy_engine.py -v -s
+```
+
+Optional: `REQRES_USERS_URL` if your project uses a different base URL (see [ReqRes docs](https://app.reqres.in/docs#authentication)).
 
 ## Setup and run
 
@@ -29,10 +37,29 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 python -m playwright install chromium
+cp .env.example .env
+# Edit .env — set REQRES_API_KEY from https://app.reqres.in/api-keys
 pytest
 ```
 
-API tests skip automatically if ReqRes is unreachable from your network.
+Pytest loads `.env` from the repo root automatically (via `python-dotenv` in `conftest.py`). **Do not commit `.env`** — it is listed in `.gitignore`; only `.env.example` is tracked.
+
+### API tests only (see printed policy lines)
+
+```bash
+pytest tests/test_api_policy_engine.py -v -s
+```
+
+`-s` shows the assignment’s `print` output. Tests **skip** if ReqRes does not return usable responses (set `REQRES_API_KEY` if you see `missing_api_key`).
+
+### UI in a visible browser (optional slow motion)
+
+```bash
+pytest tests/test_ui_booking_flow.py -v --headed
+PLAYWRIGHT_SLOW_MO=400 pytest tests/test_ui_booking_flow.py -v --headed
+```
+
+API tests skip when ReqRes is unreachable, blocked, or when **`REQRES_API_KEY`** is missing but the host requires it.
 
 ## Publishing to Git
 
