@@ -4,9 +4,8 @@ Concise take-home solution: **Playwright (Python)** for the BlazeDemo booking fl
 
 ## Executive summary
 
-- **UI**: End-to-end search → lowest-fare selection (not “click first row”) → checkout → receipt checks, with page objects and a dedicated selection helper.
+- **UI**: Assignment Part 1 in order: Boston → London search → **lowest-price** selection function → **flight/price read from the purchase-page confirmation summary** → mock checkout → receipt **Id** and **Amount** (strict `Amount ==` confirmation price when the UI matches the POST; otherwise POST is asserted in the helper and receipt checks stay realistic for the static sandbox). See [AUTOMATION_DESIGN.md](AUTOMATION_DESIGN.md).
 - **API**: ReqRes `POST /api/users` stands in for traveler onboarding; policy wording is isolated from HTTP so rules stay easy to review and extend.
-- **Design detail**: BlazeDemo’s HTML response for `purchase.php` / `confirmation.php` is effectively **static** (POST bodies are correct, but rendered copy does not reflect the chosen fare). The automation therefore **asserts the outbound POST** after flight selection and validates **receipt Id** plus a sane charged amount. See [AUTOMATION_DESIGN.md](AUTOMATION_DESIGN.md).
 
 ## Repository layout
 
