@@ -4,6 +4,10 @@ Part 2 — Policy Engine (ReqRes as stand-in for an internal profile/policy API)
 Architecture: ``travelcorp/api`` sends HTTP; ``travelcorp/helpers/policy`` holds pure
 rules + printable lines. Tests prove status codes, JSON shape, and the assignment's
 print-based “logic check” without mixing policy text into the client.
+
+**ReqRes auth:** set ``REQRES_API_KEY`` in repo-root ``.env`` (see ``.env.example``) or in
+the environment; pytest loads ``.env`` via root ``conftest.py``. Without a valid key,
+ReqRes may return ``missing_api_key`` and these tests **skip**. See README prerequisites.
 """
 
 from __future__ import annotations
